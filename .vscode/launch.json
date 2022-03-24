@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'actix_url_shrink_short'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=actix_url_shrink_short",
+                    "--package=actix_url_shrink_short"
+                ],
+                "filter": {
+                    "name": "actix_url_shrink_short",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'actix_url_shrink_short'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=actix_url_shrink_short",
+                    "--package=actix_url_shrink_short"
+                ],
+                "filter": {
+                    "name": "actix_url_shrink_short",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

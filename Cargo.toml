@@ -1,0 +1,24 @@
+[package]
+name = "actix_url_shrink_short"
+version = "0.1.0"
+edition = "2021"
+authors = ["smilex<msmliexx1@gmail.com>"]
+
+[dependencies]
+actix-web =  { version = "4", features = ["cookies", "cookie", "actix-web-codegen", "compress-brotli", "compress-gzip", "compress-zstd", "macros"] }
+actix-cors = "0.6.1"
+log = "0.4"
+pretty_env_logger = "0.4"
+dotenv = "0.15.0"
+sqlx = { version = "0.5.11", features = ["runtime-actix-rustls", "macros", "mysql", "json", "chrono"] }
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.79"
+url = "2.2.2"
+rand = "0.8.5"
+
+[profile.release]
+lto = true
+strip = true
+debug = false
+opt-level = 3
