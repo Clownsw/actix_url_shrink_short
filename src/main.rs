@@ -19,6 +19,10 @@ async fn make_db_pool() -> MySqlPool {
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
     pretty_env_logger::init();
+
+    let url = std::env::var("URL").unwrap();
+    let port: u16 = std::env::var("PORT").unwrap().parse::<u16>().unwrap();
+
     let db_pool = make_db_pool().await;
 
     HttpServer::new(move || {
@@ -30,7 +34,7 @@ async fn main() -> std::io::Result<()> {
             .service(api_add_url)
             .service(api_redierct)
     })
-    .bind(("127.0.0.1", 8888))?
+    .bind((url, port))?
     .run()
     .await
 }
