@@ -1,4 +1,10 @@
-use crate::dao::url_dao::{delete_by_id, insert_url, select_by_name, select_by_target};
+#![allow(unused_assignments)]
+
+use std::sync::Arc;
+
+use crate::dao::url_dao::{
+    delete_by_id, insert_url, select_by_name, select_by_target, select_count_by_name,
+};
 use crate::pojo::app_state::AppState;
 use crate::pojo::msg::Msg;
 use crate::pojo::user::{InsertUrl, Url};
@@ -7,6 +13,7 @@ use actix_web::web::Path;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use chrono::Duration;
 use chrono::Utc;
+use sqlx::Pool;
 
 #[post("/api/add")]
 async fn api_add_url(body: String, data: web::Data<AppState>) -> impl Responder {
@@ -39,7 +46,24 @@ async fn api_add_url(body: String, data: web::Data<AppState>) -> impl Responder 
             }
         }
 
-        let rand_url_name = rand_hex_str().await;
+        // 创建弱引用
+        let _db_pool: Arc<Pool<_>> = Arc::new(data.db_pool.clone());
+        let _db_pool_weak = Arc::downgrade(&_db_pool);
+
+        let mut rand_url_name = String::new();
+
+        // 创建一个十六进制随机字符串
+        // 并对其循环检查是否存在, 如果存在则重新生成, 反之可使用跳出循环
+        loop {
+            rand_url_name = rand_hex_str().await;
+
+            if select_count_by_name(&_db_pool_weak.upgrade().unwrap().as_ref(), &rand_url_name)
+                .await
+                <= 0
+            {
+                break;
+            }
+        }
 
         msg.message = String::from(rand_url_name.as_str());
 

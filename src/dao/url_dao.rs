@@ -17,6 +17,19 @@ pub async fn insert_url(db_pool: &MySqlPool, url: InsertUrl) -> MySqlQueryResult
     .unwrap()
 }
 
+pub async fn select_count_by_name(db_pool: &MySqlPool, url_name: &String) -> usize {
+    sqlx::query!(
+        r#"
+        SELECT url_id FROM urls WHERE url_name = ?
+    "#,
+        url_name
+    )
+    .fetch_all(db_pool)
+    .await
+    .unwrap()
+    .len()
+}
+
 pub async fn select_by_name(
     db_pool: &MySqlPool,
     url_name: &String,
