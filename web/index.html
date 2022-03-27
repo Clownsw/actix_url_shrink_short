@@ -110,13 +110,13 @@
 
                 if (url.url !== '' && url/url != ' ') {
                     $.ajax({
-                        url: "http://localhost:8888/api/add",
+                        url: "https://localhost:8888/api/add",
                         type: "POST",
                         data: JSON.stringify(url),
                         dataType: "JSON",
                         success: function (result) {
                             if (result.code === 200) {
-                                layer.alert('http://localhost:8888/api/t/' + result.message)
+                                layer.alert('https://localhost:8888/api/t/' + result.message)
                             }
                         },
                         error: function (reuslt) {
