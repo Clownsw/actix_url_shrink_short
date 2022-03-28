@@ -5,14 +5,17 @@ use std::sync::Arc;
 use crate::dao::url_dao::{
     delete_by_id, insert_url, select_by_name, select_by_target, select_count_by_name,
 };
+
 use crate::pojo::app_state::AppState;
 use crate::pojo::msg::Msg;
 use crate::pojo::user::{InsertUrl, Url};
-use crate::util::global_util::rand_hex_str;
+use crate::util::global_util::{get_redis_string_by_key, rand_hex_str, set_redis_string};
+use crate::URL_TIME;
 use actix_web::web::Path;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use chrono::Duration;
 use chrono::Utc;
+use log::info;
 use sqlx::Pool;
 
 #[post("/api/add")]
@@ -92,10 +95,46 @@ async fn api_redierct(path: Path<String>, data: web::Data<AppState>) -> impl Res
     };
 
     if !name.is_empty() {
-        if let Ok(v) = select_by_name(&data.db_pool, &name).await {
+        let mut async_conn = data.redis_client.get_async_connection().await.unwrap();
+
+        // 尝试去redis中查询
+        if let Ok(v) = get_redis_string_by_key(&mut async_conn, &name).await {
+            info!("从缓存中读出 {}", name);
+
             return HttpResponse::TemporaryRedirect()
-                .insert_header(("location", v.url_target))
+                .insert_header(("location", v))
                 .finish();
+        } else {
+            // 如果缓存查不到, 尝试去数据库中查
+            if let Ok(v) = select_by_name(&data.db_pool, &name).await {
+                // 判断一下是否过期, 如果过期返回错误提示并删除该记录
+                if v.url_time.timestamp_millis() > Utc::now().timestamp_millis() {
+                    let url_time_ref = URL_TIME.lock().unwrap();
+
+                    // 如果没过期则, 将这个存入redis进行缓存
+                    match set_redis_string(
+                        &mut async_conn,
+                        &name,
+                        &v.url_target,
+                        *url_time_ref as usize,
+                    )
+                    .await
+                    {
+                        Ok(_) => {
+                            info!("缓存 {} 成功!", name.clone())
+                        }
+                        Err(_) => {
+                            info!("缓存 {} 失败!", name.clone())
+                        }
+                    };
+
+                    return HttpResponse::TemporaryRedirect()
+                        .insert_header(("location", v.url_target))
+                        .finish();
+                } else {
+                    delete_by_id(&data.db_pool, v.url_id).await;
+                }
+            }
         }
     }
 
